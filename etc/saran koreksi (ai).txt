@@ -1,0 +1,435 @@
+//awal pregistrasi (yang akan dibenarkan)  
+
+  move_uploaded_file($lokasi_foto, $folder);
+$sql = "INSERT INTO pendaftaran (id_pengguna, nama_lengkap, kelamin, tgl_lahir, tempat_lahir, alamat, foto, status) VALUES (" . $_SESSION['id_pengguna'] . ", '$nama', '$kelamin', '$tanggal', '$tempat', '$alamat', '$nama_foto', 'Pending')";
+
+$aksi = $conn->query($sql);
+header('location:../registrasi.php?sukses=Data REgistrasi Telah Dikirim... Silahkan tunggu untuk proses');
+}
+
+
+//saran koreksi⬇️
+  
+        // pastikan upload ada dan tidak error
+        if (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== UPLOAD_ERR_OK) {
+                header('location:../registrasi.php?gagal=File foto tidak ditemukan atau gagal diupload');
+                exit;
+        }
+
+        // buat nama file unik untuk menghindari bentrok
+        $original_name = basename($_FILES['foto']['name']);
+        $ext = pathinfo($original_name, PATHINFO_EXTENSION);
+        $safe_name = preg_replace('/[^A-Za-z0-9._-]/', '_', pathinfo($original_name, PATHINFO_FILENAME));
+        $unique_name = time() . '_' . bin2hex(random_bytes(4)) . '_' . $safe_name . ($ext ? '.' . $ext : '');
+        $target_folder = __DIR__ . '/../foto/';
+        $target_path = $target_folder . $unique_name;
+
+        // gunakan prepared statement untuk INSERT
+        $stmt = $conn->prepare("INSERT INTO pendaftaran (id_pengguna, nama_lengkap, kelamin, tgl_lahir, tempat_lahir, alamat, foto, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')");
+        if ($stmt === false) {
+                die('Prepare failed: ' . $conn->error);
+        }
+        $stmt->bind_param('issssss', $id, $nama, $kelamin, $tanggal, $tempat, $alamat, $unique_name);
+        $ok = $stmt->execute();
+        if (!$ok) {
+                $stmt->close();
+                die('Insert gagal: ' . $stmt->error);
+        }
+        $stmt->close();
+
+        // baru pindahkan file ke folder tujuan; jika gagal hapus baris yang baru dibuat
+        if (!move_uploaded_file($lokasi_foto, $target_path)) {
+                // hapus record yang baru dibuat (cari berdasarkan id_pengguna dan nama file)
+                $del = $conn->prepare("DELETE FROM pendaftaran WHERE id_pengguna = ? AND foto = ? LIMIT 1");
+                if ($del) {
+                        $del->bind_param('is', $id, $unique_name);
+                        $del->execute();
+                        $del->close();
+                }
+                header('location:../registrasi.php?gagal=Gagal menyimpan file foto. Coba lagi.');
+                exit;
+        }
+
+        header('location:../registrasi.php?sukses=Data Registrasi Telah Dikirim... Silahkan tunggu untuk proses');
+
+}
+
+
+//akhir pregistrasi
+
+
+
+//pembenaran di status
+
+//pembenaran I
+if ($row['status'== " "]){
+                            $status = "Dalam proses";
+                        } else {
+                            $status = $row['status'];
+                        }
+
+saran pembenaran⬇️
+
+if (!$row) {
+                            echo "Data pendaftaran belum ada";
+                        } else {
+                            if ($row['status'] == "" || $row['status'] == null){
+                                $status = "Dalam proses";
+                            } else {
+                                $status = $row['status'];
+                            }
+                        }
+//akhir pembenaran I
+
+//pembenaran II
+
+<div class="row mb-3">
+                            <div class="col-md-4">
+                                Status
+                            </div>
+                            <div class="col-md-8">
+                                : <?php echo $row['status']; ?>
+                            </div>
+                        </div>
+
+saran pembenaran⬇️
+
+<div class="row mb-3">
+                            <div class="col-md-4">
+                                Status
+                            </div>
+                            <div class="col-md-8">
+                                : <?php 
+                                if (!$row) {
+                                    echo "Data pendaftaran belum ada";
+                                } else {
+                                    echo $status;
+                                }
+                                ?>
+                            </div>
+                        </div>
+
+//akhir pembenaran II
+
+//akhir pembenaran dari status
+
+
+//pembenaran di Detail(admin)
+
+ include '../fungsi/koneksi.php'; 
+                        $id=$_GET['id'];
+                        $cek = "SELECT * FROM daftar WHWERE id_daftar=$id";
+                        $aksi = $conn->query($cek);
+                        $row = $aksi->fetch_assoc();    
+
+//saran pembenaran⬇️
+ $id = isset($_GET['id']) ? intval($_GET['id']) : 0; // Validasi nilai $id
+                        if ($id > 0) {
+                            $stmt = $conn->prepare("SELECT * FROM daftar WHERE id_daftar = ?");
+                            $stmt->bind_param("i", $id);
+                            $stmt->execute();
+                            $aksi = $stmt->get_result();
+                            $row = $aksi->fetch_assoc();
+                        } else {
+                            echo "ID tidak valid.";
+                            exit;
+                        }
+
+// Akhir pembenaran di Detail(admin)
+
+
+//pembenaran di proses_masuk
+
+<?php
+session_start();
+include('koneksi.php');
+$username = $_POST['username'];
+$password = $_POST['password'];
+$sql = "SELECT * FROM pengguna WHERE username='$username' AND password='$password'";
+$aksi = $conn->query($sql); //perintah unutk menjalankan query
+$banyakda_data = $aksi->num_rows; //menghitung jumlah data dari hasil query 
+if ($banyakda_data >= 1) {
+    $isi = $aksi->fetch_assoc();
+    $_SESSION['id_pengguna'] = $isi['id_pengguna'];
+    $_SESSION['username'] = $isi['username'];
+    $_SESSION['level'] = $isi['level'];
+
+if ($isi['level'] == "ADMIN") {
+    header("location:../admin/index.php");
+} else {
+    header("Location:../index.php");
+}
+} else {
+    header('location:../login.php?gagal=Username atau Password SALAH');
+}
+
+
+//saran pembenaran⬇️ menggunakan prepared statement
+<?php
+session_start();
+include('koneksi.php');
+
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+// Use prepared statements to prevent SQL injection
+$stmt = $conn->prepare("SELECT * FROM pengguna WHERE username = ? AND password = ?");
+$stmt->bind_param("ss", $username, $password);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$banyakda_data = $result->num_rows; //menghitung jumlah data dari hasil query 
+if ($banyakda_data >= 1) {
+    $isi = $result->fetch_assoc();
+    $_SESSION['id_pengguna'] = $isi['id_pengguna'];
+    $_SESSION['username'] = $isi['username'];
+    $_SESSION['level'] = $isi['level'];
+
+    if ($isi['level'] == "ADMIN") {
+        header("location:../admin/index.php");
+    } else {
+        header("Location:../index.php");
+    }
+} else {
+    header('location:../login.php?gagal=Username atau Password SALAH');
+}
+
+$stmt->close();
+$conn->close();
+?>
+
+//akhir pembenaran di proses_masuk
+
+//pembenaran di halaman Navigasi
+
+ <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav">
+        <a class="nav-link active" aria-current="page" href="index.php">Home</a>
+        <a class="nav-link" href="registrasi.php">Registrasi</a>
+        <a class="nav-link" href="status.php">Cek Status </a> 
+        <a class="nav-link" href="fungsi/keluar.php">keluar</a> 
+      </div>
+
+//saran pembenaran⬇️ (Menambahkan fungsi php untuk membuat fungsi aria-current="page" berfungsi sebagai mana mestinya, misal kita ada di halaman registrasi, maka Kata registrasi di Navbar akan berkilau.menjaadi lebih terang)
+<?php
+// Fungsi untuk mengecek halaman saat ini dan mengembalikan 'active' jika sesuai
+function isActive($pageName) {
+    // basename($_SERVER['PHP_SELF']) mengembalikan nama file dari URL saat ini (misalnya "registrasi.php")
+    if (basename($_SERVER['PHP_SELF']) == $pageName) {
+        return 'active" aria-current="page';
+    }
+    return '';
+}
+?>
+
+<div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+    <div class="navbar-nav">
+        <!-- Terapkan fungsi isActive() ke setiap tautan -->
+        <a class="nav-link <?php echo isActive('index.php'); ?>" href="index.php">Home</a>
+        <a class="nav-link <?php echo isActive('registrasi.php'); ?>" href="registrasi.php">Registrasi</a>
+        <a class="nav-link <?php echo isActive('status.php'); ?>" href="status.php">Cek Status</a>
+        <a class="nav-link" href="fungsi/keluar.php">Keluar</a> 
+    </div>
+</div>
+
+//akhir pembenaran Navigasi
+
+
+//pembenaran di halamanan Status
+if (isset($_POST['update_data'])) {
+    $id_pengguna = $_SESSION['id_pengguna']; // ambil id pengguna
+
+    //mengambil data dari form yang sebelumnya diisi dan mengamankan data dengan kenggunakan mysqli_real_escape_string
+    $nama_lengkap = mysqli_real_escape_string($conn, $_POST['nama_lengkap']);
+    $kelamin = mysqli_real_escape_string($conn, $_POST['kelamin']);
+    $tempat_lahir = mysqli_real_escape_string($conn, $_POST['tempat_lahir']);
+    $tgl_lahir = mysqli_real_escape_string($conn, $_POST['tgl_lahir']);
+    $alamat = mysqli_real_escape_string($conn, $_POST['alamat']);
+
+    //
+    $sql_update = "UPDATE pendaftaran SET #menggunakan SET untuk mengupdate data
+        nama_lengkap = '$nama_lengkap',
+        kelamin = '$kelamin',
+        tempat_lahir = '$tempat_lahir',
+        tgl_lahir = '$tgl_lahir',
+        alamat = '$alamat'
+        WHERE id_pengguna = $id_pengguna"; #menggunakan WHERE untuk menentukan data dari tabel mana yang akan diupdate berdasarkan id_pengguna
+
+    $query_update = $conn->query($sql_update); //fungsi query untuk mengirimkan data ke database melalui koneksi ($conn)
+
+    if ($query_update) {
+
+        header('Location: status.php?sukses=update_sukses');
+        exit;
+    } else {
+        // Gagal
+        die("Gagal menyimpan perubahan: " . $conn->error); //menampilkan pesan error bila proses update gagal
+    }
+}
+
+
+//pembenaran⬇️
+// status.php (Di Bagian Paling Atas, setelah include koneksi.php)
+// ...
+
+if (isset($_POST['update_data'])) {
+    $id_pengguna = $_SESSION['id_pengguna'];
+    
+    // Mengambil data TEXT dari form dan amankan
+    $nama_lengkap = mysqli_real_escape_string($conn, $_POST['nama_lengkap']);
+    $kelamin = mysqli_real_escape_string($conn, $_POST['kelamin']);
+    $tempat_lahir = mysqli_real_escape_string($conn, $_POST['tempat_lahir']);
+    $tgl_lahir = mysqli_real_escape_string($conn, $_POST['tgl_lahir']);
+    $alamat = mysqli_real_escape_string($conn, $_POST['alamat']);
+
+    // Mulai string query UPDATE
+    $sql_update = "UPDATE pendaftaran SET 
+        nama_lengkap = '$nama_lengkap',
+        kelamin = '$kelamin',
+        tempat_lahir = '$tempat_lahir',
+        tgl_lahir = '$tgl_lahir',
+        alamat = '$alamat'";
+        
+    // --- LOGIKA UPLOAD FOTO BARU ---
+    $file_update_query = ""; // Variabel untuk menyimpan bagian query foto
+
+    // Cek apakah ada file foto baru yang diunggah
+    if (isset($_FILES['foto_baru']) && $_FILES['foto_baru']['error'] === 0) {
+        $file_name = $_FILES['foto_baru']['name'];
+        $file_tmp = $_FILES['foto_baru']['tmp_name'];
+        
+        // Buat nama file yang unik (misalnya: ID_TIMESTAMP.ext)
+        $ekstensi = pathinfo($file_name, PATHINFO_EXTENSION);
+        $nama_file_baru = $id_pengguna . '_' . time() . '.' . $ekstensi;
+        $tujuan_upload = 'foto/' . $nama_file_baru; // Sesuaikan path folder foto kamu
+        
+        // Pindahkan file dari lokasi sementara ke folder tujuan
+        if (move_uploaded_file($file_tmp, $tujuan_upload)) {
+            // Jika upload berhasil, tambahkan kolom foto ke query UPDATE
+            $file_update_query = ", foto = '$nama_file_baru'";
+            
+            // OPSIONAL: Hapus file lama dari server
+            // Ambil nama file lama dari database dulu
+            $sql_old_foto = "SELECT foto FROM pendaftaran WHERE id_pengguna = $id_pengguna";
+            $res_old_foto = $conn->query($sql_old_foto)->fetch_assoc();
+            $old_foto_name = $res_old_foto['foto'];
+            
+            // Pastikan file lama ada dan bukan file default, lalu hapus
+            if (!empty($old_foto_name) && file_exists('foto/' . $old_foto_name)) {
+                unlink('foto/' . $old_foto_name);
+            }
+            
+        } else {
+            // Jika gagal upload, tampilkan error dan batalkan update
+            die("Gagal mengunggah file foto.");
+        }
+    }
+    // --- AKHIR LOGIKA UPLOAD FOTO BARU ---
+
+    // Gabungkan query utama dengan query foto (jika ada) dan tambahkan WHERE
+    $sql_update .= $file_update_query;
+    $sql_update .= " WHERE id_pengguna = $id_pengguna";
+
+    $query_update = $conn->query($sql_update); 
+
+    if ($query_update) {
+        header('Location: status.php?sukses=update_sukses');
+        exit;
+    } else {
+        die("Gagal menyimpan perubahan: " . $conn->error);
+    }
+}
+//
+Kesimpulan
+Blok kode pertama lebih fungsional dan lengkap untuk skenario di mana pengguna dapat mengedit profil mereka, termasuk mengganti foto profil. Blok kode kedua adalah dasar yang hanya cocok jika Anda hanya ingin memperbarui informasi dasar pengguna tanpa mengubah file gambar.
+
+
+//pembenaran⬇️ ke 2
+// status.php (Di Bagian Paling Atas, di dalam if (isset($_POST['update_data'])))
+
+// ... (Kode pengambilan data teks di sini)
+
+// Mulai string query UPDATE
+$sql_update = "UPDATE pendaftaran SET 
+    nama_lengkap = '$nama_lengkap',
+    kelamin = '$kelamin',
+    tempat_lahir = '$tempat_lahir',
+    tgl_lahir = '$tgl_lahir',
+    alamat = '$alamat'";
+    
+// --- LOGIKA UPLOAD FOTO BARU ---
+$file_update_query = ""; 
+
+// 1. Definisikan batas ukuran file (misalnya: 2 MB)
+$max_size = 2097152; // 2 MB dalam bytes
+
+// Cek apakah ada file foto baru yang diunggah
+if (isset($_FILES['foto_baru']) && $_FILES['foto_baru']['error'] === 0) {
+    
+    // --- PENGECEKAN UKURAN FILE BARU ---
+    if ($_FILES['foto_baru']['size'] > $max_size) {
+        // Jika ukuran file melebihi batas
+        die("Gagal: Ukuran file foto terlalu besar. Maksimal " . ($max_size / 1048576) . " MB.");
+    }
+    // ------------------------------------
+
+    $file_name = $_FILES['foto_baru']['name'];
+    $file_tmp = $_FILES['foto_baru']['tmp_name'];
+    
+    // Buat nama file yang unik (misalnya: ID_TIMESTAMP.ext)
+    $ekstensi = pathinfo($file_name, PATHINFO_EXTENSION);
+    
+    // OPTIONAL: Pengecekan tipe file (hanya izinkan jpg, jpeg, png)
+    $ekstensi_valid = ['jpg', 'jpeg', 'png'];
+    if (!in_array(strtolower($ekstensi), $ekstensi_valid)) {
+         die("Gagal: Format file tidak didukung. Hanya izinkan JPG, JPEG, atau PNG.");
+    }
+
+    $nama_file_baru = $id_pengguna . '_' . time() . '.' . $ekstensi;
+    $tujuan_upload = 'foto/' . $nama_file_baru; 
+    
+    // Pindahkan file 
+    if (move_uploaded_file($file_tmp, $tujuan_upload)) {
+        // ... (Logika update database dan hapus foto lama) ...
+        $file_update_query = ", foto = '$nama_file_baru'";
+        
+        // ... (Bagian hapus foto lama) ...
+        $sql_old_foto = "SELECT foto FROM pendaftaran WHERE id_pengguna = $id_pengguna";
+        $res_old_foto = $conn->query($sql_old_foto)->fetch_assoc();
+        $old_foto_name = $res_old_foto['foto'];
+        
+        if (!empty($old_foto_name) && file_exists('foto/' . $old_foto_name)) {
+            unlink('foto/' . $old_foto_name);
+        }
+    } else {
+        die("Gagal mengunggah file foto.");
+    }
+}
+// ... (Sisa query update dan redirect) ...
+
+//
+Perbedaan utama antara blok kode yang baru Anda berikan dengan blok kode pertama sebelumnya adalah penambahan validasi keamanan dan kualitas file (foto).
+Blok kode yang baru ini lebih tangguh dan aman karena menyertakan pemeriksaan penting sebelum benar-benar menyimpan file ke server atau memperbarui database.
+Berikut adalah fitur tambahan yang membuatnya berbeda:
+1. Pengecekan Ukuran File (File Size Check)
+Kode Baru Menambahkan: Batas ukuran file didefinisikan ($max_size = 2097152; yaitu 2 MB).
+Fungsinya: Kode memeriksa $_FILES['foto_baru']['size'] terhadap batas ini. Jika file terlalu besar, proses dihentikan (die()) dan pesan kesalahan ditampilkan. Ini mencegah pengguna mengunggah file yang sangat besar yang dapat membebani server Anda atau menghabiskan ruang penyimpanan dengan cepat.
+2. Pengecekan Tipe File (File Type/Extension Check)
+Kode Baru Menambahkan: Array ekstensi yang valid (['jpg', 'jpeg', 'png']) didefinisikan.
+Fungsinya: Kode memverifikasi ekstensi file yang diunggah (pathinfo(..., PATHINFO_EXTENSION)) terhadap daftar yang diizinkan. Jika pengguna mencoba mengunggah file berbahaya (misalnya, file .exe atau .php yang disamarkan) atau format yang tidak didukung (misalnya, .gif), proses dihentikan. Ini adalah lapisan keamanan kritis untuk mencegah serangan malware atau script berbahaya di server Anda.
+//akhir pembenaran di halaman Status
+
+
+//info
+Ringkasan   Tabel Limitasi
+Jenis Input	        Atribut HTML	Fungsi
+Teks, Password	    maxlength	    Karakter maksimal
+Teks, Password	    minlength	    Karakter minimal
+Angka	            max	Nilai       angka maksimal
+Angka	            min	Nilai       angka minimal
+Angka	            step	        Interval kenaikan/penurunan
+File	            accept	        Jenis file yang diizinkan
+Semua Input	        required	    Wajib diisi
+Teks/Angka	        pattern	        Format input spesifik
+
+//akhir info
